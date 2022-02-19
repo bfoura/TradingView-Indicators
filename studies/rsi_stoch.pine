@@ -1,0 +1,50 @@
+//@version=4
+study(title="RSI and Stoch (Brahim)", shorttitle="RSI/Stoch Signal", overlay=true)
+
+// RSI inputs
+
+rsi_source = input(title="RSI Source", type=input.source, defval=close)
+rsi_length = input(title="RSI stoch_length", type=input.integer, defval=7)
+rsi_over_bought_level = input(title="RSI Overbought Level", type=input.integer, defval=70)
+rsi_over_sold_level = input(title="RSI Oversold Level", type=input.integer, defval=30)
+
+isRSIOverBought(rsi_over_bought_level) =>
+    rsiValue = rsi(rsi_source, rsi_length)
+    is_over_bought = rsiValue >= rsi_over_bought_level
+    is_over_bought
+
+isRSIOverSold(rsi_over_sold_level) =>
+    rsiValue = rsi(rsi_source, rsi_length)
+    is_over_sold = rsiValue <= rsi_over_sold_level
+    is_over_sold
+
+// Stoch inputs
+
+stoch_length = input(defval=14, minval=1, title = "Stochastic Length")
+k = input(defval=1, minval=1, title = "Stochastic %K")
+d = input(defval=3, minval=1, title = "Stochastic %D")
+stoch_over_bought_level = input(title="RSI Overbought Level", type=input.integer, defval=80)
+stoch_over_sold_level = input(title="RSI Oversold Level", type=input.integer, defval=20)
+
+
+isStochOverBought(stoch_over_bought_level, k) => 
+    Sto = stoch (close, high, low, stoch_length)
+    K= sma (Sto, k)
+    is_over_bought = K >= stoch_over_bought_level
+    is_over_bought
+
+isStochOverSold(stoch_over_sold_level, k) => 
+    Sto = stoch (close, high, low, stoch_length)
+    K= sma (Sto, k)
+    is_over_sold = K <= stoch_over_sold_level
+    is_over_sold
+
+
+price_is_over_bought = isRSIOverBought(rsi_over_bought_level) and isStochOverBought(stoch_over_bought_level, k)
+price_is_over_sold = isRSIOverSold(rsi_over_sold_level) and isStochOverSold(stoch_over_sold_level, k)
+
+// Plot
+plotshape(price_is_over_bought,  title= "Overbought", location=location.abovebar, color=color.red, transp=0, style=shape.triangledown, text="OB")
+plotshape(price_is_over_sold, title= "Oversold", location=location.belowbar, color=color.green, transp=0, style=shape.triangleup, text="OS")
+
+// alertcondition(price_is_over_bought or price_is_over_sold, title="Stoch Alert!", message="Stoch Alert")

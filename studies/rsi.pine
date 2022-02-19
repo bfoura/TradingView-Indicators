@@ -1,0 +1,23 @@
+//@version=4
+study(title="RSI (Brahim)", shorttitle="RSI Signal", overlay=true)
+rsi_source = input(title="RSI Source", type=input.source, defval=close)
+rsi_length = input(title="RSI stoch_length", type=input.integer, defval=14)
+rsi_over_bought_level = input(title="RSI Overbought Level", type=input.integer, defval=70)
+rsi_over_sold_level = input(title="RSI Oversold Level", type=input.integer, defval=30)
+
+// Computing over bought/sold status
+
+isRSIOverBought(rsi_over_bought_level) =>
+    rsiValue = rsi(rsi_source, rsi_length)
+    is_over_bought = rsiValue >= rsi_over_bought_level
+    is_over_bought
+
+isRSIOverSold(rsi_over_sold_level) =>
+    rsiValue = rsi(rsi_source, rsi_length)
+    is_over_sold = rsiValue <= rsi_over_sold_level
+    is_over_sold
+
+// Plot
+plotshape(isRSIOverBought(rsi_over_bought_level),  title= "Overbought", location=location.abovebar, color=color.red, transp=0, style=shape.triangledown, text="OB")
+plotshape(isRSIOverSold(rsi_over_sold_level), title= "Oversold", location=location.belowbar, color=color.green, transp=0, style=shape.triangleup, text="OS")
+

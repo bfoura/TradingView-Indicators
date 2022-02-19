@@ -1,0 +1,26 @@
+//@version=4
+study(title="Stoch (Brahim)", shorttitle="Stoch Signal", overlay=true)
+
+stoch_length = input(defval=14, minval=1, title = "Stochastic Length")
+k = input(defval=1, minval=1, title = "Stochastic %K")
+d = input(defval=3, minval=1, title = "Stochastic %D")
+stoch_over_bought_level = input(title="RSI Overbought Level", type=input.integer, defval=80)
+stoch_over_sold_level = input(title="RSI Oversold Level", type=input.integer, defval=20)
+
+isStochOverBought(stoch_over_bought_level, k) => 
+    Sto = stoch (close, high, low, stoch_length)
+    K= sma (Sto, k)
+    is_over_bought = K >= stoch_over_bought_level
+    is_over_bought
+
+isStochOverSold(stoch_over_sold_level, k) => 
+    Sto = stoch (close, high, low, stoch_length)
+    K= sma (Sto, k)
+    is_over_sold = K <= stoch_over_sold_level
+    is_over_sold
+
+
+// Plot
+plotshape(isStochOverBought(stoch_over_bought_level, k),  title= "Overbought", location=location.abovebar, color=color.red, transp=0, style=shape.triangledown, text="SB")
+plotshape(isStochOverSold(stoch_over_sold_level, k), title= "Oversold", location=location.belowbar, color=color.green, transp=0, style=shape.triangleup, text="SS")
+
