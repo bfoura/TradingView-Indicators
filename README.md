@@ -1,2 +1,2 @@
-# TradingView-Pivot-Points-Indicator
-A TradingView Pine script indicator showing pivots points in different methods (Traditional, Camarilla, Fibonacci..)
+# TradingView-Indicators
+Multiple TradingView Pine script indicators (Pivot points, Bollinger, Divergences, RSI, Stoch..)

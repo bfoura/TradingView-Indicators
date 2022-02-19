@@ -24,6 +24,9 @@ isPriceNearLower(lower, price) =>
     is_below = between(price, min, max)
     is_below
 
+price_near_lower_bb = isPriceNearLower(lower, low)
+price_near_upper_bb = isPriceNearUpper(upper, high)
+
 //plotshape(ta.crossunder(low, lower), title= "BB down", style=shape.triangledown, color=color.white, location=location.abovebar)
-plotshape(isPriceNearLower(lower, low), title= "BB down", style=shape.square, color=color.white, location=location.belowbar)
+plotshape(price_near_lower_bb, title= "BB down", style=shape.square, color=color.white, location=location.belowbar)
 
