@@ -60,9 +60,15 @@ draw_label(labels, i, y, txt, txt_color, arr_time) =>
         x = position_labels == "Left" ? array.get(arr_time, i) : array.get(arr_time, i + 1)
         array.push(labels, label.new(x = x, y=y, text=labels_align_str_left, textcolor=txt_color, style=label.style_label_center, color=#00000000, xloc=xloc.bar_time))
 
-traditional(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close,p,r1,s1,r2,s2,r3,s3,r4,s4,r5,s5) =>
+traditional(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close,p,pt,pb,r1,s1,r2,s2,r3,s3,r4,s4,r5,s5) =>
     pivotX_Median = (pivotX_prev_high + pivotX_prev_low + pivotX_prev_close) / 3
+    // Bottom CPR = (High + Low)/ 2
+    // Top CPR = (Pivot – BC) + Pivot
+    bottom_pivot = (pivotX_prev_high + pivotX_prev_low) / 2
+    top_pivot = (pivotX_Median - bottom_pivot) +  pivotX_Median
     array.push(p, pivotX_Median)
+    array.push(pt, top_pivot)
+    array.push(pb, bottom_pivot)
     array.push(r1, pivotX_Median * 2 - pivotX_prev_low)
     array.push(s1, pivotX_Median * 2 - pivotX_prev_high)
     array.push(r2, pivotX_Median + 1 * (pivotX_prev_high - pivotX_prev_low))
@@ -144,6 +150,9 @@ make_pivots(pivot_time_frame) =>
     var DEF_COLOR = #FB8C00
     var arr_time = array.new_int()
     var p = array.new_float()
+    var pt = array.new_float()
+    var pb = array.new_float()
+
     p_show = input.bool(true, "P‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏", inline="P")
     p_color = input.color(DEF_COLOR, "", inline="P")
     var r1 = array.new_float()
@@ -232,7 +241,7 @@ make_pivots(pivot_time_frame) =>
             array.push(arr_time, change_time)
 
         if kind == TRADITIONAL
-            traditional(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close, p, r1, s1, r2, s2, r3, s3, r4, s4, r5, s5)
+            traditional(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close, p, pt, pb, r1, s1, r2, s2, r3, s3, r4, s4, r5, s5)
         else if kind == FIBONACCI
             fibonacci(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close, p, r1, s1, r2, s2, r3, s3)
         else if kind == WOODIE
@@ -249,6 +258,10 @@ make_pivots(pivot_time_frame) =>
                 array.shift(arr_time)
             if array.size(p) > 0 and p_show
                 array.shift(p)
+            if array.size(pt) > 0 and p_show
+                array.shift(pt)
+            if array.size(pb) > 0 and p_show
+                array.shift(pb)
             if array.size(r1) > 0 and s1r1_show
                 array.shift(r1)
             if array.size(s1) > 0 and s1r1_show
@@ -297,7 +310,13 @@ make_pivots(pivot_time_frame) =>
         for i = 0 to array.size(arr_time) - 2
             if array.size(p) > 0 and p_show
                 draw_line(lines, i, p, p_color, arr_time)
-                draw_label(labels, i, array.get(p, i), "P - "+pivot_time_frame, label_color, arr_time)
+                draw_label(labels, i, array.get(p, i), "Piv - "+pivot_time_frame, label_color, arr_time)
+            if array.size(pt) > 0 and p_show
+                draw_line(lines, i, pt, p_color, arr_time)
+                draw_label(labels, i, array.get(pt, i), "Piv Top - "+pivot_time_frame, label_color, arr_time)
+            if array.size(pb) > 0 and p_show
+                draw_line(lines, i, pb, p_color, arr_time)
+                draw_label(labels, i, array.get(pb, i), "Piv Bottom - "+pivot_time_frame, label_color, arr_time)
             if array.size(r1) > 0 and s1r1_show
                 draw_line(lines, i, r1, s1r1_color, arr_time)
                 draw_label(labels,i, array.get(r1, i), "R1 - "+pivot_time_frame, label_color, arr_time)
