@@ -20,6 +20,10 @@ DEMARK = "DM"
 CAMARILLA = "Camarilla"
 
 kind = input.string(title="Type", defval="Traditional", options=[TRADITIONAL, FIBONACCI, WOODIE, CLASSIC, DEMARK, CAMARILLA])
+show_daily_pivots = input.bool(title="Show Daily Pivots", defval=true, tooltip="Show daily pivots or not")
+show_weekly_pivots = input.bool(title="Show Weekly Pivots", defval=true, tooltip="Show weekly pivots or not")
+show_monthly_pivots = input.bool(title="Show Monthly Pivots", defval=true, tooltip="Show monthly pivots or not")
+
 // pivot_time_frame = input.string(title="Pivots Timeframe", defval=AUTO, options=[AUTO, DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY, BIYEARLY, TRIYEARLY, QUINQUENNIALLY, DECENNIALLY])
 look_back = input.int(title="Number of Pivots Back", defval=15, minval=1, maxval=5000)
 is_daily_based = input.bool(title="Use Daily-based Values", defval=true, tooltip="When this option is unchecked, Pivot Points will use intraday data while calculating on intraday charts. If Extended Hours are displayed on the chart, they will be taken into account during the pivot level calculation. If intraday OHLC values are different from daily-based values (normal for stocks), the pivot levels will also differ.")
@@ -55,17 +59,19 @@ draw_line(lines, i, pivot, col, arr_time) =>
 
 draw_label(labels, i, y, txt, txt_color, arr_time) =>
     if show_labels
-        offset = '‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏'
+        offset = '‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏'
         labels_align_str_left= position_labels == "Left" ? txt + offset : offset + txt
         x = position_labels == "Left" ? array.get(arr_time, i) : array.get(arr_time, i + 1)
         array.push(labels, label.new(x = x, y=y, text=labels_align_str_left, textcolor=txt_color, style=label.style_label_center, color=#00000000, xloc=xloc.bar_time))
 
-traditional(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close,p,pt,pb,r1,s1,r2,s2,r3,s3,r4,s4,r5,s5) =>
+traditional(res,pivotX_prev_high, pivotX_prev_low, pivotX_prev_close,p,pt,pb,r1,s1,r2,s2,r3,s3,r4,s4,r5,s5,pl,ph) =>
     pivotX_Median = (pivotX_prev_high + pivotX_prev_low + pivotX_prev_close) / 3
     // Bottom CPR = (High + Low)/ 2
     // Top CPR = (Pivot – BC) + Pivot
     bottom_pivot = (pivotX_prev_high + pivotX_prev_low) / 2
     top_pivot = (pivotX_Median - bottom_pivot) +  pivotX_Median
+    prev_high = request.security(syminfo.tickerid, res, high[1], lookahead=barmerge.lookahead_on)
+    prev_low = request.security(syminfo.tickerid, res, low[1], lookahead=barmerge.lookahead_on)
     array.push(p, pivotX_Median)
     array.push(pt, top_pivot)
     array.push(pb, bottom_pivot)
@@ -79,6 +85,8 @@ traditional(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close,p,pt,pb,r1,s1,r
     array.push(s4, pivotX_Median * 3 - (3 * pivotX_prev_high - pivotX_prev_low))
     array.push(r5, pivotX_Median * 4 + (pivotX_prev_high - 4 * pivotX_prev_low))
     array.push(s5, pivotX_Median * 4 - (4 * pivotX_prev_high - pivotX_prev_low))
+    array.push(pl, prev_low)
+    array.push(ph, prev_high)
 
 fibonacci(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close,p,r1,s1,r2,s2,r3,s3) =>
     pivotX_Median = (pivotX_prev_high + pivotX_prev_low + pivotX_prev_close) / 3
@@ -152,6 +160,8 @@ make_pivots(pivot_time_frame) =>
     var p = array.new_float()
     var pt = array.new_float()
     var pb = array.new_float()
+    var pl = array.new_float()
+    var ph = array.new_float()
 
     p_show = input.bool(true, "P‏  ‏  ‏  ‏  ‏  ‏  ‏  ‏", inline="P")
     p_color = input.color(DEF_COLOR, "", inline="P")
@@ -241,7 +251,7 @@ make_pivots(pivot_time_frame) =>
             array.push(arr_time, change_time)
 
         if kind == TRADITIONAL
-            traditional(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close, p, pt, pb, r1, s1, r2, s2, r3, s3, r4, s4, r5, s5)
+            traditional(resolution,pivotX_prev_high, pivotX_prev_low, pivotX_prev_close, p, pt, pb, r1, s1, r2, s2, r3, s3, r4, s4, r5, s5, pl, ph)
         else if kind == FIBONACCI
             fibonacci(pivotX_prev_high, pivotX_prev_low, pivotX_prev_close, p, r1, s1, r2, s2, r3, s3)
         else if kind == WOODIE
@@ -282,6 +292,11 @@ make_pivots(pivot_time_frame) =>
                 array.shift(r5)
             if array.size(s5) > 0 and s5r5_show
                 array.shift(s5)
+            if array.size(pl) > 0 and p_show
+                array.shift(pl)
+            if array.size(ph) > 0 and p_show
+                array.shift(ph)
+
         is_change := true
     else
         if is_daily_based and custom_years_divisor == -1
@@ -313,10 +328,10 @@ make_pivots(pivot_time_frame) =>
                 draw_label(labels, i, array.get(p, i), "Piv - "+pivot_time_frame, label_color, arr_time)
             if array.size(pt) > 0 and p_show
                 draw_line(lines, i, pt, p_color, arr_time)
-                draw_label(labels, i, array.get(pt, i), "Piv Top - "+pivot_time_frame, label_color, arr_time)
+                draw_label(labels, i, array.get(pt, i), "Piv Bottom - "+pivot_time_frame, label_color, arr_time)
             if array.size(pb) > 0 and p_show
                 draw_line(lines, i, pb, p_color, arr_time)
-                draw_label(labels, i, array.get(pb, i), "Piv Bottom - "+pivot_time_frame, label_color, arr_time)
+                draw_label(labels, i, array.get(pb, i), "Piv Top - "+pivot_time_frame, label_color, arr_time)
             if array.size(r1) > 0 and s1r1_show
                 draw_line(lines, i, r1, s1r1_color, arr_time)
                 draw_label(labels,i, array.get(r1, i), "R1 - "+pivot_time_frame, label_color, arr_time)
@@ -347,8 +362,16 @@ make_pivots(pivot_time_frame) =>
             if array.size(s5) > 0 and s5r5_show
                 draw_line(lines, i, s5, s5r5_color, arr_time)
                 draw_label(labels,i, array.get(s5, i), "S5 - "+pivot_time_frame, s5r5_color, arr_time)
+            if array.size(pl) > 0 and p_show
+                draw_line(lines, i, pl, p_color, arr_time)
+                draw_label(labels, i, array.get(pl, i), "Prev "+pivot_time_frame+" Low", label_color, arr_time)
+            if array.size(ph) > 0 and p_show
+                draw_line(lines, i, ph, p_color, arr_time)
+                draw_label(labels, i, array.get(ph, i), "Prev "+pivot_time_frame+" High", label_color, arr_time)
 
-
-make_pivots(DAILY)
-make_pivots(WEEKLY)
-make_pivots(MONTHLY)
+if show_daily_pivots
+    make_pivots(DAILY)
+if show_weekly_pivots
+    make_pivots(WEEKLY)
+if show_monthly_pivots
+    make_pivots(MONTHLY)
